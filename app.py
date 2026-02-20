@@ -1,9 +1,13 @@
 from flask import Flask
 from flask_security import Security, SQLAlchemyUserDatastore
+from werkzeug.security import generate_password_hash
 from backend.models import db, User, Role 
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///my_database"
+app.config["SECRET_KEY"] = "password-hashing"
+app.config["SECURITY_PASSWORD_HASH"] = "bcrypt"
+app.config["SECURITY_PASSWORD_SALT"] = "salt-password"
 datastore = SQLAlchemyUserDatastore(db, User, Role)
 app.security = Security(app, datastore)
 
@@ -18,7 +22,7 @@ with app.app_context():
         app.security.datastore.create_user(
             email = "admin@gmail.com",
             username="admin",
-            password="1234",
+            password=generate_password_hash("1234"),
             roles=["admin"]
         )
 
@@ -26,7 +30,7 @@ with app.app_context():
         app.security.datastore.create_user(
             email="user@gmail.com",
             username="user",
-            password="1234",
+            password=generate_password_hash("1234"),
             roles=["user"]
         )
 
