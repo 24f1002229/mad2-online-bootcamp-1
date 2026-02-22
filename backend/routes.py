@@ -1,9 +1,11 @@
 from flask import Flask,render_template, request, jsonify
 from werkzeug.security import check_password_hash,generate_password_hash
-from flask_security import login_user, current_user
+from flask_security import login_user, auth_required, roles_required
+from flask_login import current_user
 from .utils import roles_list
 from backend.models import *
 from app import app 
+
 
 @app.route("/")
 def home():
@@ -59,3 +61,37 @@ def register():
     return jsonify({
         "message": "User Already Exists !!"
     })
+
+@app.route("/api/admin")
+@auth_required('token')
+@roles_required('admin')
+def admin():
+    return jsonify({
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "roles": roles_list(current_user.roles)
+    })
+
+
+@app.route("/api/lot/<int:lot_id>", methods=["GET"])
+@auth_required("token")
+@roles_required("admin")
+def get_lot(lot_id):
+    lot = ParkingLot.query.get(lot_id)
+    if not lot :
+        return {"message" : "Lot is not exists"}
+    
+    return {
+        "id" : lot_id,
+        "prime_location_name" : lot.prime_location_name,
+        "address" : lot.address,
+        "pincode" : lot.pincode,
+        "price" : lot.price,
+        "spots" : [
+            {
+                "id": s.id,
+                "is_occupied" : s.is_occupied
+            } for s in lot.spots
+        ]
+    }
